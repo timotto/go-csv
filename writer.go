@@ -57,7 +57,7 @@ func (w Writer) writeDelimiter() error {
 	return w.writeRune(w.opts.Delimiter)
 }
 
-func (w Writer) fieldNeedsQuote(field string) bool {
+func (w Writer) fieldNeedsQuote(field string, column int) bool {
 	switch w.opts.Quoting {
 	case QuoteNone:
 		return false
@@ -67,12 +67,23 @@ func (w Writer) fieldNeedsQuote(field string) bool {
 		return !isNumeric(field)
 	case QuoteNonNumericNonEmpty:
 		return !(isNumeric(field) || isEmpty(field))
+	case QuoteAllExcept:
+		return !w.isExcepted(column)
 	case QuoteMinimal:
 		// TODO: Can be improved by making a single search with trie.
 		// See https://docs.python.org/2/library/csv.html#csv.QUOTE_MINIMAL for info on this.
 		return strings.Contains(field, w.opts.LineTerminator) || strings.ContainsRune(field, w.opts.Delimiter) || strings.ContainsRune(field, w.opts.QuoteChar)
 	}
 	panic("Unexpected quoting.")
+}
+
+func (w Writer) isExcepted(column int) bool {
+	for _, v := range w.opts.UnquotedFields {
+		if v == column {
+			return true
+		}
+	}
+	return false
 }
 
 func (w Writer) writeRune(r rune) error {
@@ -116,8 +127,8 @@ func (w Writer) writeQuoted(field string) error {
 	return w.writeRune(w.opts.QuoteChar)
 }
 
-func (w Writer) writeField(field string) error {
-	if w.fieldNeedsQuote(field) {
+func (w Writer) writeField(field string, column int) error {
+	if w.fieldNeedsQuote(field, column) {
 		return w.writeQuoted(field)
 	}
 	return w.writeString(field)
@@ -136,7 +147,7 @@ func (w Writer) Write(record []string) (err error) {
 				return
 			}
 		}
-		if err = w.writeField(field); err != nil {
+		if err = w.writeField(field, n); err != nil {
 			return
 		}
 	}
