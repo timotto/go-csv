@@ -87,7 +87,7 @@ func TestMinimalQuoting(t *testing.T) {
 	if w.opts.Quoting != QuoteMinimal {
 		t.Fatal("Unexpected quoting.")
 	}
-	if s := "b,c"; !w.fieldNeedsQuote(s) {
+	if s := "b,c"; !w.fieldNeedsQuote(s, 0) {
 		t.Error("Expected field to need quoting:", s)
 	}
 
@@ -137,6 +137,27 @@ func TestEmptyFieldQuoting(t *testing.T) {
 	})
 	w.Flush()
 	if s := string(b.Bytes()); s != "\"a\",112,,\"b c\"\n" {
+		t.Error("Unexpected output:", s)
+	}
+}
+
+func TestAllExceptFieldQuoting(t *testing.T) {
+	t.Parallel()
+
+	b := new(bytes.Buffer)
+	dialect := Dialect{
+		Quoting:        QuoteAllExcept,
+		UnquotedFields: []int{1},
+	}
+	w := NewDialectWriter(b, dialect)
+	w.Write([]string{
+		"a",
+		"112",
+		"4289",
+		"",
+	})
+	w.Flush()
+	if s := string(b.Bytes()); s != "\"a\",112,\"4289\",\"\"\n" {
 		t.Error("Unexpected output:", s)
 	}
 }

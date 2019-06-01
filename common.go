@@ -19,6 +19,7 @@ const (
 	QuoteMinimal                      = iota // Quotes when needed.
 	QuoteNonNumeric                   = iota // Quotes around non-numeric fields.
 	QuoteNonNumericNonEmpty           = iota // Quotes around non-numeric or empty fields.
+	QuoteAllExcept                    = iota // Quotes around non-numeric or empty fields.
 
 	// Never quote. Use with care. Could make things unparsable.
 	QuoteNone = iota
@@ -53,6 +54,8 @@ type Dialect struct {
 	Delimiter rune
 	// What quoting mode to use. Defaults to DefaultQuoting.
 	Quoting QuoteMode
+	// What fields not to quote. Only used if Quoting==QuoteAllExcept.
+	UnquotedFields []int
 	// How to escape quotes. Defaults to DefaultDoubleQuote.
 	DoubleQuote DoubleQuoteMode
 	// Character to use for escaping. Only used if DoubleQuote==NoDoubleQuote.
